@@ -4,6 +4,7 @@ import { buildCoaster } from '../lib/coaster/build';
 import type { CoasterSettings } from '../lib/coaster/settings';
 import type { LogoArt } from '../lib/logo/art';
 import { findIcon, iconArt } from '../lib/logo/icons';
+import { scanCoaster } from '../lib/scan/scan';
 import { build3mf } from '../lib/threemf/writer';
 import { FONT_URLS } from './fontUrls';
 import type { WorkerRequest, WorkerResponse } from './protocol';
@@ -75,6 +76,11 @@ scope.onmessage = async (event: MessageEvent<WorkerRequest>) => {
           },
           parts.flatMap((p) => [p.positions.buffer, p.triangles.buffer]),
         );
+        // The preview goes out first; the scan check follows as soon as it finishes.
+        if (result.qr) {
+          const readable = scanCoaster(result, message.settings.slots) === result.payload;
+          post({ type: 'scanned', id: message.id, readable });
+        }
         break;
       }
       case 'export': {

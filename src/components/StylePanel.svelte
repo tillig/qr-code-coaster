@@ -65,7 +65,7 @@
       <label>
         Quiet zone (modules)
         <input type="number" min="0" max="6" step="1" bind:value={settings.quietZone} />
-        <span class="hint">Blank border scanners need around the code.</span>
+        <span class="hint">Blank space around the code, measured in the code's small squares.</span>
       </label>
     </div>
   </details>

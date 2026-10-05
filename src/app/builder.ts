@@ -7,12 +7,17 @@ type Built = Extract<WorkerResponse, { type: 'built' }>;
 const worker = new Worker(new URL('./builder.worker.ts', import.meta.url), { type: 'module' });
 const waiting = new Map<number, { resolve: (r: WorkerResponse) => void }>();
 const fontErrors = new Set<(id: string, message: string) => void>();
+const scans = new Set<(buildId: number, readable: boolean) => void>();
 let nextId = 1;
 
 worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
   const message = event.data;
   if (message.type === 'font-error') {
     fontErrors.forEach((listener) => listener(message.id, message.message));
+    return;
+  }
+  if (message.type === 'scanned') {
+    scans.forEach((listener) => listener(message.id, message.readable));
     return;
   }
   waiting.get(message.id)?.resolve(message);
@@ -46,4 +51,10 @@ export function addFont(id: string, buffer: ArrayBuffer) {
 export function onFontError(listener: (id: string, message: string) => void) {
   fontErrors.add(listener);
   return () => fontErrors.delete(listener);
+}
+
+/** Reports whether the design from a given preview build decoded back to its content. */
+export function onScan(listener: (buildId: number, readable: boolean) => void) {
+  scans.add(listener);
+  return () => scans.delete(listener);
 }

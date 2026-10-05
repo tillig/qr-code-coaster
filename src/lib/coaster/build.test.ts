@@ -3,7 +3,8 @@ import { area } from '../geometry/shape';
 import { iconArt, findIcon } from '../logo/icons';
 import { inspectMesh } from '../mesh/validate';
 import { CENTER_STYLES, FRAME_STYLES, MODULE_STYLES } from '../qr/styles';
-import { scanTop, testAssets } from '../../test/helpers';
+import { scanCoaster } from '../scan/scan';
+import { testAssets } from '../../test/helpers';
 import { buildCoaster } from './build';
 import { defaultSettings, type CoasterSettings } from './settings';
 
@@ -28,7 +29,7 @@ describe('buildCoaster', () => {
     const result = buildCoaster(s, testAssets());
     expect(result.warnings).toEqual([]);
     expectSolid(result);
-    expect(scanTop(result, s.size, s.baseSlot)).toBe('https://example.com/coaster');
+    expect(scanCoaster(result, s.slots)).toBe('https://example.com/coaster');
   });
 
   it('splits the top surface into regions that exactly cover the coaster', () => {
@@ -67,7 +68,7 @@ describe('buildCoaster', () => {
       const s = settings((s) => (s.moduleStyle = moduleStyle));
       const result = buildCoaster(s, testAssets());
       expectSolid(result);
-      expect(scanTop(result, s.size, s.baseSlot)).toBe('https://example.com/coaster');
+      expect(scanCoaster(result, s.slots)).toBe('https://example.com/coaster');
     });
   }
 
@@ -82,7 +83,7 @@ describe('buildCoaster', () => {
         });
         const result = buildCoaster(s, testAssets());
         expectSolid(result);
-        expect(scanTop(result, s.size, s.baseSlot)).toBe('https://example.com/coaster');
+        expect(scanCoaster(result, s.slots)).toBe('https://example.com/coaster');
       });
     }
   }
@@ -98,7 +99,7 @@ describe('buildCoaster', () => {
     expect(result.warnings).toEqual([]);
     expect(result.qr?.errorCorrection).toBe('H');
     expectSolid(result);
-    expect(scanTop(result, s.size, s.baseSlot)).toBe('https://example.com/coaster');
+    expect(scanCoaster(result, s.slots)).toBe('https://example.com/coaster');
   });
 
   it('shrinks the code to make room for straight text on a square coaster', () => {
@@ -115,7 +116,7 @@ describe('buildCoaster', () => {
     expect(withText.warnings).toEqual([]);
     expect(withText.qr!.moduleSize).toBeLessThan(plain.qr!.moduleSize);
     expectSolid(withText);
-    expect(scanTop(withText, s.size, s.baseSlot)).toBe('https://example.com/coaster');
+    expect(scanCoaster(withText, s.slots)).toBe('https://example.com/coaster');
   });
 
   it('warns when the text cannot fit', () => {

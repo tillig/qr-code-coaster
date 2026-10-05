@@ -2,9 +2,6 @@ import { create } from 'qrcode';
 
 export type ErrorCorrection = 'L' | 'M' | 'Q' | 'H';
 
-/** Fraction of the code each error correction level can lose and still scan. */
-export const RECOVERY: Record<ErrorCorrection, number> = { L: 0.07, M: 0.15, Q: 0.25, H: 0.3 };
-
 export interface QrMatrix {
   size: number;
   version: number;

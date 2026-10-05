@@ -30,7 +30,7 @@ A few choices aren't obvious from the code:
 
 ## Tests
 
-Tests are Vitest files named `*.test.ts`, next to the code they cover. They run under Node; files that need a DOM start with `// @vitest-environment jsdom`. `src/lib/coaster/build.test.ts` builds every pattern and corner style, checks that each mesh is watertight, and decodes the result with two QR libraries. Add a new style to the lists in `src/lib/qr/styles.ts` and it's covered automatically.
+Tests are Vitest files named `*.test.ts`, next to the code they cover. They run under Node; files that need a DOM start with `// @vitest-environment jsdom`. `src/lib/coaster/build.test.ts` builds every pattern and corner style, checks that each mesh is watertight, and decodes the result with the same scan check the app runs (`src/lib/scan/scan.ts`). Add a new style to the lists in `src/lib/qr/styles.ts` and it's covered automatically.
 
 ## Slicer smoke test
 

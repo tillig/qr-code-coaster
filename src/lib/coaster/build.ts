@@ -15,7 +15,7 @@ import {
 import type { LogoArt } from '../logo/art';
 import { extrude, type Mesh } from '../mesh/extrude';
 import { encodeContent } from '../qr/content';
-import { createMatrix, isFinderModule, RECOVERY, type ErrorCorrection, type QrMatrix } from '../qr/matrix';
+import { createMatrix, isFinderModule, type ErrorCorrection, type QrMatrix } from '../qr/matrix';
 import { finderShapes, moduleShapes, type Grid } from '../qr/styles';
 import { layoutArc, layoutLine } from '../text/text';
 import { fitLayout, TEXT_GAP, type Rect, type TextBox } from './layout';
@@ -42,6 +42,8 @@ export interface BuildResult {
   parts: CoasterPart[];
   /** The top surface split by color slot. */
   regions: { slot: number; shape: Shape }[];
+  /** Diameter or side length actually built, after clamping to the supported range. */
+  size: number;
   warnings: string[];
   payload: string;
   qr: { version: number; modules: number; moduleSize: number; errorCorrection: ErrorCorrection } | null;
@@ -193,12 +195,6 @@ export function buildCoaster(input: CoasterSettings, assets: BuildAssets): Build
         }
       }
       cleared = (r, c) => hidden.has(r * matrix!.size + c);
-      const lostShare = hidden.size / (matrix.size * matrix.size);
-      if (lostShare > 0.6 * RECOVERY[ecc]) {
-        warnings.push(
-          `The logo covers ${Math.round(lostShare * 100)}% of the code, which may stop it from scanning. Make the logo smaller${ecc === 'H' ? '' : ' or raise the error correction level'}.`,
-        );
-      }
     }
 
     const mx = matrix;
@@ -269,5 +265,5 @@ export function buildCoaster(input: CoasterSettings, assets: BuildAssets): Build
     parts.push({ name: `Top, filament ${r.slot + 1}`, slot: r.slot, mesh: extrude(r.shape, floor, thickness) });
   }
 
-  return { parts, regions, warnings, payload, qr: qrInfo };
+  return { parts, regions, size, warnings, payload, qr: qrInfo };
 }

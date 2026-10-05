@@ -23,6 +23,7 @@ export type WorkerResponse =
       qr: BuildResult['qr'];
       payloadLength: number;
     }
+  | { type: 'scanned'; id: number; readable: boolean }
   | { type: 'exported'; id: number; bytes: Uint8Array }
   | { type: 'font-error'; id: string; message: string }
   | { type: 'error'; id: number; message: string };

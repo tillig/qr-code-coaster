@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { buildPreview, export3mf, onFontError } from './app/builder';
+  import { buildPreview, export3mf, onFontError, onScan } from './app/builder';
   import type { PreviewPart } from './app/protocol';
   import { settings, uploads } from './app/state.svelte';
   import type { CoasterSettings } from './lib/coaster/settings';
@@ -18,8 +18,13 @@
   let downloading = $state(false);
   let error = $state('');
   let fontWarning = $state('');
+  let scan = $state<'none' | 'checking' | 'passed' | 'failed'>('none');
+  let shownBuild = 0;
 
   onFontError((_, message) => (fontWarning = `A font could not be loaded: ${message}`));
+  onScan((buildId, readable) => {
+    if (buildId === shownBuild) scan = readable ? 'passed' : 'failed';
+  });
 
   // Only one build runs at a time; changes made meanwhile collapse into a single follow-up build.
   let queued: { settings: CoasterSettings; upload: typeof uploads.logo } | null = null;
@@ -33,6 +38,8 @@
         if (queued) continue;
         parts = result.parts;
         warnings = result.warnings;
+        shownBuild = result.id;
+        scan = result.qr ? 'checking' : 'none';
         error = '';
         info = result.qr
           ? `${result.qr.modules}×${result.qr.modules} modules, ${result.qr.moduleSize.toFixed(2)} mm each, error correction ${result.qr.errorCorrection}`
@@ -100,6 +107,16 @@
       {/each}
     </div>
     {#if info}<p class="hint">{info}</p>{/if}
+    {#if scan === 'checking'}
+      <p class="hint">Checking that the code scans…</p>
+    {:else if scan === 'passed'}
+      <p class="success">Test scan passed: the code reads back correctly.</p>
+    {:else if scan === 'failed'}
+      <p class="warning">
+        A test scan couldn't read this code. Try a smaller logo, stronger contrast between colors, a simpler pattern, or
+        less content.
+      </p>
+    {/if}
     {#each fontWarning ? [fontWarning, ...warnings] : warnings as warning (warning)}
       <p class="warning">{warning}</p>
     {/each}
@@ -193,6 +210,14 @@
     height: 1rem;
     border-radius: 3px;
     border: 1px solid var(--border);
+  }
+
+  .success {
+    background: var(--success-soft);
+    color: var(--success);
+    border-radius: 6px;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.9rem;
   }
 
   .warning {
