@@ -20,7 +20,7 @@ After every change the app test-scans the design in your real colors, then simul
 
 ## Printing it
 
-When you open the file, Bambu Studio offers to match its colors to your filaments. Accept or adjust the match and each color prints as its own filament. Other 3MF slicers import the same parts, and you assign their filaments yourself.
+When you open the file, Bambu Studio may first say it has an invalid config and will load geometry data only. That's expected: the file deliberately carries no printer settings, so yours stay as they are. Dismiss it, and Bambu Studio offers to match the file's colors to your filaments. Accept or adjust the match and each color prints as its own filament. Other 3MF slicers import the same parts, and you assign their filaments yourself.
 
 The colors are inlaid flush into the top few layers (the depth is adjustable), so the surface stays flat under a glass. Before printing, scan the top view of the preview with your phone to confirm the code works.
 
