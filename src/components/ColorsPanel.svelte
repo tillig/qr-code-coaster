@@ -1,6 +1,6 @@
 <script lang="ts">
   import { settings } from '../app/state.svelte';
-  import { MAX_SLOTS, removeSlot } from '../lib/coaster/settings';
+  import { MAX_SLOTS, NOZZLES, removeSlot } from '../lib/coaster/settings';
   import Panel from './Panel.svelte';
   import SlotPicker from './SlotPicker.svelte';
 
@@ -43,6 +43,13 @@
     <button type="button" class="button add" onclick={addSlot}>Add a color</button>
   {/if}
   <SlotPicker label="Coaster body" bind:value={settings.baseSlot} />
+  <label class="nozzle">
+    Printer nozzle
+    <select bind:value={settings.nozzle}>
+      {#each NOZZLES as n (n)}<option value={n}>{n} mm</option>{/each}
+    </select>
+    <span class="hint">Used to check which details are too fine to print.</span>
+  </label>
 </Panel>
 
 <style>
@@ -78,6 +85,10 @@
   .hex {
     max-width: 8rem;
     font-family: ui-monospace, monospace;
+  }
+
+  .nozzle {
+    max-width: 16rem;
   }
 
   .add {
