@@ -21,34 +21,10 @@
       Thickness (mm)
       <input type="number" min="1" max="10" step="0.1" bind:value={settings.thickness} />
     </label>
+    <label>
+      Edge margin (mm)
+      <input type="number" min="0" max="20" step="0.5" bind:value={settings.margin} />
+      <span class="hint">Blank space between the edge and the design.</span>
+    </label>
   </div>
-  <details>
-    <summary>Advanced</summary>
-    <div class="row advanced">
-      <label>
-        Color depth (mm)
-        <input type="number" min="0.2" max={settings.thickness - 0.4} step="0.1" bind:value={settings.inlayDepth} />
-        <span class="hint">
-          How deep the colors go into the top. The default of 0.6 mm is three 0.2 mm layers; for other layer heights,
-          use about three layers' worth.
-        </span>
-      </label>
-      <label>
-        Edge margin (mm)
-        <input type="number" min="0" max="20" step="0.5" bind:value={settings.margin} />
-        <span class="hint">Blank space between the edge and the design.</span>
-      </label>
-    </div>
-  </details>
 </Panel>
-
-<style>
-  .advanced {
-    margin-top: 0.75rem;
-  }
-
-  summary {
-    cursor: pointer;
-    font-size: 0.9rem;
-  }
-</style>

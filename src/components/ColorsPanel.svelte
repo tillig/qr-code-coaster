@@ -43,13 +43,23 @@
     <button type="button" class="button add" onclick={addSlot}>Add a color</button>
   {/if}
   <SlotPicker label="Coaster body" bind:value={settings.baseSlot} />
-  <label class="nozzle">
-    Printer nozzle
-    <select bind:value={settings.nozzle}>
-      {#each NOZZLES as n (n)}<option value={n}>{n} mm</option>{/each}
-    </select>
-    <span class="hint">Used to check which details are too fine to print.</span>
-  </label>
+  <div class="row">
+    <label>
+      Printer nozzle
+      <select bind:value={settings.nozzle}>
+        {#each NOZZLES as n (n)}<option value={n}>{n} mm</option>{/each}
+      </select>
+      <span class="hint">Used to check which details are too fine to print.</span>
+    </label>
+    <label>
+      Color depth (mm)
+      <input type="number" min="0.2" max={settings.thickness - 0.4} step="0.1" bind:value={settings.inlayDepth} />
+      <span class="hint">
+        How deep the colors go into the top. The default of 0.6 mm is three 0.2 mm layers; for other layer heights, use
+        about three layers' worth.
+      </span>
+    </label>
+  </div>
 </Panel>
 
 <style>
@@ -85,10 +95,6 @@
   .hex {
     max-width: 8rem;
     font-family: ui-monospace, monospace;
-  }
-
-  .nozzle {
-    max-width: 16rem;
   }
 
   .add {
