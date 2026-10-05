@@ -14,6 +14,17 @@ export interface PreviewPart {
   triangles: Uint32Array;
 }
 
+export interface CheckResult {
+  /** The design as drawn decodes to its content. */
+  readable: boolean;
+  /** A simulated print with the chosen nozzle still decodes. */
+  printReadable: boolean;
+  /** Square millimeters of detail too thin for the nozzle. */
+  lostArea: number;
+  /** A thin layer over the top surface marking those details. */
+  highlight: { positions: Float32Array; triangles: Uint32Array } | null;
+}
+
 export type WorkerResponse =
   | {
       type: 'built';
@@ -23,7 +34,7 @@ export type WorkerResponse =
       qr: BuildResult['qr'];
       payloadLength: number;
     }
-  | { type: 'scanned'; id: number; readable: boolean }
+  | { type: 'checked'; id: number; check: CheckResult }
   | { type: 'exported'; id: number; bytes: Uint8Array }
   | { type: 'font-error'; id: string; message: string }
   | { type: 'error'; id: number; message: string };

@@ -1,13 +1,13 @@
 import type { CoasterSettings } from '../lib/coaster/settings';
 import type { LogoArt } from '../lib/logo/art';
-import type { WorkerRequest, WorkerResponse } from './protocol';
+import type { CheckResult, WorkerRequest, WorkerResponse } from './protocol';
 
 type Built = Extract<WorkerResponse, { type: 'built' }>;
 
 const worker = new Worker(new URL('./builder.worker.ts', import.meta.url), { type: 'module' });
 const waiting = new Map<number, { resolve: (r: WorkerResponse) => void }>();
 const fontErrors = new Set<(id: string, message: string) => void>();
-const scans = new Set<(buildId: number, readable: boolean) => void>();
+const checks = new Set<(buildId: number, check: CheckResult) => void>();
 let nextId = 1;
 
 worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
@@ -16,8 +16,8 @@ worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
     fontErrors.forEach((listener) => listener(message.id, message.message));
     return;
   }
-  if (message.type === 'scanned') {
-    scans.forEach((listener) => listener(message.id, message.readable));
+  if (message.type === 'checked') {
+    checks.forEach((listener) => listener(message.id, message.check));
     return;
   }
   waiting.get(message.id)?.resolve(message);
@@ -53,8 +53,8 @@ export function onFontError(listener: (id: string, message: string) => void) {
   return () => fontErrors.delete(listener);
 }
 
-/** Reports whether the design from a given preview build decoded back to its content. */
-export function onScan(listener: (buildId: number, readable: boolean) => void) {
-  scans.add(listener);
-  return () => scans.delete(listener);
+/** Reports the scan and print checks for a given preview build. */
+export function onCheck(listener: (buildId: number, check: CheckResult) => void) {
+  checks.add(listener);
+  return () => checks.delete(listener);
 }

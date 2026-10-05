@@ -1,5 +1,6 @@
 <script lang="ts">
   import { settings } from '../app/state.svelte';
+  import { NOZZLES } from '../lib/coaster/settings';
   import Panel from './Panel.svelte';
 </script>
 
@@ -20,6 +21,13 @@
     <label>
       Thickness (mm)
       <input type="number" min="1" max="10" step="0.1" bind:value={settings.thickness} />
+    </label>
+    <label>
+      Printer nozzle
+      <select bind:value={settings.nozzle}>
+        {#each NOZZLES as n (n)}<option value={n}>{n} mm</option>{/each}
+      </select>
+      <span class="hint">Used to check which details are too fine to print.</span>
     </label>
   </div>
   <details>

@@ -130,4 +130,23 @@ describe('buildCoaster', () => {
     const s = settings((s) => (s.slots = ['#ffffff', '#eeeeee']));
     expect(buildCoaster(s, testAssets()).warnings.join(' ')).toMatch(/contrast/);
   });
+
+  it('warns when modules are narrower than two lines from the chosen nozzle', () => {
+    // These modules are about 1.1 mm: comfortable for a 0.4 mm nozzle, too fine for a 0.8 mm one.
+    const dense = (nozzle: number) =>
+      settings((s) => {
+        s.nozzle = nozzle;
+        s.content.type = 'wifi';
+        s.content.wifi = {
+          ssid: 'Guest Network',
+          password: 'correct horse battery staple',
+          security: 'WPA',
+          hidden: false,
+        };
+        s.logo = { ...s.logo, source: 'icon', iconId: 'wifi' };
+      });
+    const warnings = (nozzle: number) => buildCoaster(dense(nozzle), testAssets(iconArt(findIcon('wifi')!))).warnings;
+    expect(warnings(0.4).join(' ')).not.toMatch(/modules/);
+    expect(warnings(0.8).join(' ')).toMatch(/0\.8 mm nozzle/);
+  });
 });

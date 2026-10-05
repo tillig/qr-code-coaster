@@ -19,7 +19,7 @@ import { createMatrix, isFinderModule, type ErrorCorrection, type QrMatrix } fro
 import { finderShapes, moduleShapes, type Grid } from '../qr/styles';
 import { layoutArc, layoutLine } from '../text/text';
 import { fitLayout, TEXT_GAP, type Rect, type TextBox } from './layout';
-import { luminance, MAX_SLOTS, nearestSlot, type CoasterSettings, type TextSettings } from './settings';
+import { lineWidth, luminance, MAX_SLOTS, nearestSlot, type CoasterSettings, type TextSettings } from './settings';
 
 /** Colored regions grow by this much before overlaps are resolved, so shapes that touch only at a corner merge cleanly. */
 const WELD = 0.005;
@@ -44,6 +44,9 @@ export interface BuildResult {
   regions: { slot: number; shape: Shape }[];
   /** Diameter or side length actually built, after clamping to the supported range. */
   size: number;
+  thickness: number;
+  footprint: Shape;
+  baseSlot: number;
   warnings: string[];
   payload: string;
   qr: { version: number; modules: number; moduleSize: number; errorCorrection: ErrorCorrection } | null;
@@ -133,8 +136,13 @@ export function buildCoaster(input: CoasterSettings, assets: BuildAssets): Build
     const grid: Grid = { left: cx - codeSide / 2, top: cy + codeSide / 2, module: m };
     qrInfo = { version: matrix.version, modules: matrix.size, moduleSize: m, errorCorrection: ecc };
 
-    if (m < 0.8) warnings.push(`QR modules are only ${m.toFixed(2)} mm wide, which is too small to print reliably.`);
-    else if (m < 1.2) warnings.push(`QR modules are ${m.toFixed(2)} mm wide; fine detail like this may print poorly.`);
+    const nozzle = clamp(input.nozzle, 0.1, 1.2);
+    const line = lineWidth(nozzle);
+    if (m < 2 * line) {
+      warnings.push(
+        `QR modules are ${m.toFixed(2)} mm wide, less than two ${line.toFixed(2)} mm lines from a ${nozzle} mm nozzle, so they may print poorly.`,
+      );
+    }
 
     // The logo goes on top of the code, so work out which modules it hides first.
     let cleared: (r: number, c: number) => boolean = () => false;
@@ -265,5 +273,5 @@ export function buildCoaster(input: CoasterSettings, assets: BuildAssets): Build
     parts.push({ name: `Top, filament ${r.slot + 1}`, slot: r.slot, mesh: extrude(r.shape, floor, thickness) });
   }
 
-  return { parts, regions, size, warnings, payload, qr: qrInfo };
+  return { parts, regions, size, thickness, footprint, baseSlot, warnings, payload, qr: qrInfo };
 }

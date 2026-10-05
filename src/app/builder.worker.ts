@@ -4,6 +4,9 @@ import { buildCoaster } from '../lib/coaster/build';
 import type { CoasterSettings } from '../lib/coaster/settings';
 import type { LogoArt } from '../lib/logo/art';
 import { findIcon, iconArt } from '../lib/logo/icons';
+import { area } from '../lib/geometry/shape';
+import { extrude } from '../lib/mesh/extrude';
+import { simulatePrint } from '../lib/scan/print';
 import { scanCoaster } from '../lib/scan/scan';
 import { build3mf } from '../lib/threemf/writer';
 import { FONT_URLS } from './fontUrls';
@@ -76,10 +79,27 @@ scope.onmessage = async (event: MessageEvent<WorkerRequest>) => {
           },
           parts.flatMap((p) => [p.positions.buffer, p.triangles.buffer]),
         );
-        // The preview goes out first; the scan check follows as soon as it finishes.
+        // The preview goes out first; the scan and print checks follow as soon as they finish.
         if (result.qr) {
-          const readable = scanCoaster(result, message.settings.slots) === result.payload;
-          post({ type: 'scanned', id: message.id, readable });
+          const { slots, nozzle } = message.settings;
+          const print = simulatePrint(result, nozzle);
+          const mesh = print.lost.length ? extrude(print.lost, result.thickness, result.thickness + 0.05) : null;
+          const highlight = mesh
+            ? { positions: new Float32Array(mesh.positions), triangles: new Uint32Array(mesh.triangles) }
+            : null;
+          post(
+            {
+              type: 'checked',
+              id: message.id,
+              check: {
+                readable: scanCoaster(result, slots) === result.payload,
+                printReadable: scanCoaster({ ...result, regions: print.regions }, slots) === result.payload,
+                lostArea: area(print.lost),
+                highlight,
+              },
+            },
+            highlight ? [highlight.positions.buffer, highlight.triangles.buffer] : [],
+          );
         }
         break;
       }

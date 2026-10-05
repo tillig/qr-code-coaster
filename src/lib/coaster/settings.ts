@@ -6,6 +6,11 @@ import { DEFAULT_FONT_ID } from '../text/fonts';
 /** Bambu AMS units hold four spools, and keeping to four avoids extra filament swaps. */
 export const MAX_SLOTS = 4;
 
+export const NOZZLES = [0.2, 0.4, 0.6, 0.8];
+
+/** Width of one extruded line; slicers default to slightly wider than the nozzle. */
+export const lineWidth = (nozzle: number) => nozzle + 0.02;
+
 export type Alignment = 'left' | 'center' | 'right';
 
 export interface TextSettings {
@@ -43,6 +48,8 @@ export interface CoasterSettings {
   inlayDepth: number;
   /** Clear space between the coaster edge and the artwork. */
   margin: number;
+  /** Printer nozzle diameter, used to check which details are too fine to print. */
+  nozzle: number;
   /** Filament colors as #rrggbb, one per slot. */
   slots: string[];
   baseSlot: number;
@@ -72,6 +79,7 @@ export function defaultSettings(): CoasterSettings {
     thickness: 2.5,
     inlayDepth: 0.6,
     margin: 4,
+    nozzle: 0.4,
     slots: ['#ffffff', '#000000'],
     baseSlot: 0,
     content: defaultContent(),

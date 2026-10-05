@@ -4,7 +4,17 @@
   import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   import type { PreviewPart } from '../app/protocol';
 
-  let { parts, colors, size }: { parts: PreviewPart[]; colors: string[]; size: number } = $props();
+  let {
+    parts,
+    colors,
+    size,
+    highlight = null,
+  }: {
+    parts: PreviewPart[];
+    colors: string[];
+    size: number;
+    highlight?: Pick<PreviewPart, 'positions' | 'triangles'> | null;
+  } = $props();
 
   let container: HTMLDivElement;
   let canvas: HTMLCanvasElement;
@@ -16,9 +26,28 @@
   const model = new THREE.Group();
   model.rotation.x = -Math.PI / 2;
   scene.add(model);
+  const solids = new THREE.Group();
+  const overlay = new THREE.Group();
+  model.add(solids, overlay);
   let supported = $state(true);
 
   const render = () => renderer?.render(scene, camera);
+
+  function clear(group: THREE.Group) {
+    for (const child of [...group.children]) {
+      const mesh = child as THREE.Mesh;
+      mesh.geometry.dispose();
+      (mesh.material as THREE.Material).dispose();
+      group.remove(mesh);
+    }
+  }
+
+  function geometryOf(mesh: Pick<PreviewPart, 'positions' | 'triangles'>) {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(mesh.positions, 3));
+    geometry.setIndex(new THREE.BufferAttribute(mesh.triangles, 1));
+    return geometry;
+  }
 
   function setView(view: 'angle' | 'top') {
     const d = size * 2.1;
@@ -69,24 +98,25 @@
 
   $effect(() => {
     if (!renderer) return;
-    for (const child of [...model.children]) {
-      const mesh = child as THREE.Mesh;
-      mesh.geometry.dispose();
-      (mesh.material as THREE.Material).dispose();
-      model.remove(mesh);
-    }
+    clear(solids);
     for (const part of parts) {
-      const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute('position', new THREE.BufferAttribute(part.positions, 3));
-      geometry.setIndex(new THREE.BufferAttribute(part.triangles, 1));
+      const geometry = geometryOf(part);
       const material = new THREE.MeshStandardMaterial({
         color: colors[part.slot] ?? '#888888',
         flatShading: true,
         roughness: 0.65,
         metalness: 0,
       });
-      model.add(new THREE.Mesh(geometry, material));
+      solids.add(new THREE.Mesh(geometry, material));
     }
+    render();
+  });
+
+  $effect(() => {
+    if (!renderer) return;
+    clear(overlay);
+    if (highlight)
+      overlay.add(new THREE.Mesh(geometryOf(highlight), new THREE.MeshBasicMaterial({ color: '#ff1f4b' })));
     render();
   });
 

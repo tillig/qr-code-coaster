@@ -16,7 +16,7 @@ The app is a static page with no server-side code, analytics, cookies, or saved 
 4. Style the pattern and the corner squares, and optionally add a built-in icon or your own SVG logo, plus text above or below the code.
 5. Drag the 3D preview to inspect it, then download the `.3mf`.
 
-After every change the app runs a test scan of the design in your real colors and tells you whether the code reads back correctly. Other warnings flag things likely to print poorly, such as modules too small for your nozzle.
+After every change the app test-scans the design in your real colors, then simulates printing it with your nozzle size and scans that too. Details too thin for the nozzle are highlighted in red on the preview.
 
 ## Printing it
 
