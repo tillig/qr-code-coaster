@@ -28,7 +28,10 @@
       <label>
         Color depth (mm)
         <input type="number" min="0.2" max={settings.thickness - 0.4} step="0.1" bind:value={settings.inlayDepth} />
-        <span class="hint">How deep the colors go into the top. Use a multiple of your layer height.</span>
+        <span class="hint">
+          How deep the colors go into the top. The default of 0.6 mm is three 0.2 mm layers; for other layer heights,
+          use about three layers' worth.
+        </span>
       </label>
       <label>
         Edge margin (mm)
