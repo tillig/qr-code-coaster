@@ -1,0 +1,96 @@
+name: Build, validate, and deploy
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Pinned so slicer results are reproducible; bump deliberately.
+  BAMBU_STUDIO_TAG: v02.08.02.61
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Check that the lockfile only uses the public npm registry
+        run: |
+          if grep -E '"resolved": "' package-lock.json | grep -v '"resolved": "https://registry.npmjs.org/'; then
+            echo "::error file=package-lock.json::Lockfile entries must resolve from https://registry.npmjs.org/"
+            exit 1
+          fi
+      - run: npm ci
+      - run: npm run check
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - run: npm run samples
+      - uses: actions/upload-artifact@v7
+        with:
+          name: samples
+          path: samples/
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist/
+
+  slicer:
+    name: Slice samples in Bambu Studio
+    needs: validate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: samples
+          path: samples/
+      - name: Install Bambu Studio runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb libwebkit2gtk-4.1-0 libgstreamer-plugins-base1.0-0 libgl1 libegl1 libglu1-mesa libosmesa6
+      - name: Download Bambu Studio
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$BAMBU_STUDIO_TAG" --repo bambulab/BambuStudio --pattern 'BambuStudio_ubuntu24.04-*.AppImage' --output bambu.AppImage
+          chmod +x bambu.AppImage
+          ./bambu.AppImage --appimage-extract > /dev/null
+      - name: Slice samples
+        run: |
+          xvfb-run --auto-servernum pwsh -NoProfile -File ./scripts/Test-BambuSlice.ps1 \
+            -BambuStudio ./squashfs-root/AppRun \
+            -ProfileDirectory ./squashfs-root/resources/profiles/BBL
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: sliced-samples
+          path: samples/sliced/
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [validate, slicer]
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
