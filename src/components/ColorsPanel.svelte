@@ -1,10 +1,12 @@
 <script lang="ts">
   import { settings } from '../app/state.svelte';
-  import { MAX_SLOTS, NOZZLES, removeSlot } from '../lib/coaster/settings';
+  import { MAX_SLOTS, maxInlayDepth, MIN_INLAY_DEPTH, NOZZLES, removeSlot } from '../lib/coaster/settings';
   import Panel from './Panel.svelte';
   import SlotPicker from './SlotPicker.svelte';
 
   const NEW_COLORS = ['#000000', '#d62828', '#1d4ed8', '#f59e0b'];
+
+  let depthLimit = $derived(maxInlayDepth(settings.thickness));
 
   function addSlot() {
     if (settings.slots.length >= MAX_SLOTS) return;
@@ -53,16 +55,34 @@
     </label>
     <label>
       Color depth (mm)
-      <input type="number" min="0.2" max={settings.thickness - 0.4} step="0.1" bind:value={settings.inlayDepth} />
+      <input
+        type="number"
+        min={MIN_INLAY_DEPTH}
+        max={depthLimit}
+        step="0.1"
+        bind:value={settings.inlayDepth}
+        onchange={() =>
+          (settings.inlayDepth = Math.min(
+            Math.max(settings.inlayDepth || MIN_INLAY_DEPTH, MIN_INLAY_DEPTH),
+            depthLimit,
+          ))}
+      />
       <span class="hint">
         How deep the colors go into the top. The default of 0.6 mm is three 0.2 mm layers; for other layer heights, use
-        about three layers' worth.
+        about three layers' worth. Up to {depthLimit} mm for this thickness.
       </span>
+      {#if settings.inlayDepth > depthLimit}
+        <span class="hint limited">Using {depthLimit} mm, the most this thickness allows.</span>
+      {/if}
     </label>
   </div>
 </Panel>
 
 <style>
+  .limited {
+    color: var(--warn);
+  }
+
   .slots {
     list-style: none;
     padding: 0;

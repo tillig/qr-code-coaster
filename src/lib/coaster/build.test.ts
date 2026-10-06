@@ -36,7 +36,7 @@ describe('buildCoaster', () => {
     const s = settings((s) => (s.shape = 'square'));
     const result = buildCoaster(s, testAssets());
     const total = result.regions.reduce((sum, r) => sum + area(r.shape), 0);
-    expect(total).toBeCloseTo(s.size * s.size, 0);
+    expect(total).toBeCloseTo(area(result.footprint), 0);
   });
 
   it('never uses more than four filament slots', () => {
@@ -55,12 +55,51 @@ describe('buildCoaster', () => {
     const s = settings((s) => {
       s.thickness = 3;
       s.inlayDepth = 0.8;
+      s.edge = 0;
     });
     const result = buildCoaster(s, testAssets());
     const zs = result.parts.flatMap((p) => p.mesh.positions.filter((_, i) => i % 3 === 2));
     expect(Math.min(...zs)).toBe(0);
     expect(Math.max(...zs)).toBe(3);
     expect(new Set(zs)).toEqual(new Set([0, 2.2, 3]));
+  });
+
+  it('bevels the bottom edge and rounds the top edge', () => {
+    const s = settings((s) => (s.edge = 1));
+    const result = buildCoaster(s, testAssets());
+    expectSolid(result);
+    const points = result.parts.flatMap((p) =>
+      Array.from({ length: p.mesh.positions.length / 3 }, (_, i) => p.mesh.positions.slice(3 * i, 3 * i + 3)),
+    );
+    const widest = (z: number) =>
+      Math.max(...points.filter((p) => Math.abs(p[2] - z) < 1e-6).map((p) => Math.hypot(p[0], p[1])));
+    expect(widest(0)).toBeCloseTo(49.5, 2);
+    expect(widest(s.thickness)).toBeCloseTo(49, 2);
+  });
+
+  for (const cornerRadius of [0, 6]) {
+    it(`builds watertight square coasters with corner radius ${cornerRadius}`, () => {
+      const s = settings((s) => {
+        s.shape = 'square';
+        s.cornerRadius = cornerRadius;
+        s.topText = { ...s.topText, text: 'Corners', curved: false };
+      });
+      const result = buildCoaster(s, testAssets());
+      expect(result.warnings).toEqual([]);
+      expectSolid(result);
+      expect(scanCoaster(result, s.slots)).toBe('https://example.com/coaster');
+    });
+  }
+
+  it('keeps artwork off the rounded edge', () => {
+    const s = settings((s) => {
+      s.margin = 0;
+      s.edge = 1;
+    });
+    const result = buildCoaster(s, testAssets());
+    for (const r of result.regions.filter((r) => r.slot !== s.baseSlot)) {
+      for (const pt of r.shape.flat()) expect(Math.hypot(pt.x, pt.y) / 1000).toBeLessThan(49);
+    }
   });
 
   for (const moduleStyle of MODULE_STYLES) {

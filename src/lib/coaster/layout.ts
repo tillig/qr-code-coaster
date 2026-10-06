@@ -20,6 +20,8 @@ export interface LayoutInput {
   shape: 'circle' | 'square';
   /** Half the usable width: the coaster radius or half-side, minus the margin. */
   half: number;
+  /** Corner radius of a square usable area. */
+  cornerRadius?: number;
   /** Modules across the code itself, without the quiet zone. */
   codeModules: number;
   /** Modules across the code including the quiet zone on both sides. */
@@ -59,6 +61,14 @@ function arrange(input: LayoutInput, side: number, shift: number): Omit<Layout, 
   return result;
 }
 
+/** Signed distance from a point to the edge of a square usable area with rounded corners; negative inside. */
+function roundedSquareDistance(x: number, y: number, input: LayoutInput): number {
+  const r = Math.min(input.cornerRadius ?? 0, input.half);
+  const qx = Math.abs(x) - (input.half - r);
+  const qy = Math.abs(y) - (input.half - r);
+  return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r;
+}
+
 /** How far the furthest corner sticks out past the usable area; zero or less means everything fits. */
 function overflow(input: LayoutInput, layout: Omit<Layout, 'fits'>): number {
   let worst = -Infinity;
@@ -66,8 +76,7 @@ function overflow(input: LayoutInput, layout: Omit<Layout, 'fits'>): number {
     if (!r) continue;
     for (const x of [r.x0, r.x1]) {
       for (const y of [r.y0, r.y1]) {
-        const out =
-          input.shape === 'circle' ? Math.hypot(x, y) - input.half : Math.max(Math.abs(x), Math.abs(y)) - input.half;
+        const out = input.shape === 'circle' ? Math.hypot(x, y) - input.half : roundedSquareDistance(x, y, input);
         worst = Math.max(worst, out);
       }
     }
