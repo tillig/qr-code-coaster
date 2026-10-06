@@ -29,6 +29,8 @@ import {
   luminance,
   MAX_SLOTS,
   maxEdge,
+  maxInlayDepth,
+  MIN_INLAY_DEPTH,
   nearestSlot,
   type CoasterSettings,
   type TextSettings,
@@ -114,7 +116,7 @@ export function buildCoaster(input: CoasterSettings, assets: BuildAssets): Build
   const slot = (s: number) => clamp(Math.round(s), 0, slotCount - 1);
   const size = clamp(input.size, 30, 300);
   const thickness = clamp(input.thickness, 1, 20);
-  const inlayDepth = clamp(input.inlayDepth, 0.2, thickness - 0.4);
+  const inlayDepth = clamp(input.inlayDepth, MIN_INLAY_DEPTH, maxInlayDepth(thickness));
   const margin = clamp(input.margin, 0, size / 4);
   const round = input.shape === 'circle';
   const baseSlot = slot(input.baseSlot);
