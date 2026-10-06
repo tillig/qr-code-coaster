@@ -5,20 +5,25 @@ import {
   bounds,
   clean,
   difference,
+  fill,
   intersect,
   mapPoints,
   offset,
+  polygon,
+  polygonsWithHoles,
   translate,
   union,
+  type Point,
   type Shape,
 } from '../geometry/shape';
 import type { LogoArt } from '../logo/art';
-import { extrude, type Mesh } from '../mesh/extrude';
+import { extrude, loft, type Mesh } from '../mesh/extrude';
 import { encodeContent } from '../qr/content';
 import { createMatrix, isFinderModule, type ErrorCorrection, type QrMatrix } from '../qr/matrix';
 import { finderShapes, moduleShapes, type Grid } from '../qr/styles';
 import { layoutArc, layoutLine } from '../text/text';
 import { fitLayout, TEXT_GAP, type Rect, type TextBox } from './layout';
+import { edgeProfile, outlineRing, profileBetween, type Outline } from './outline';
 import { lineWidth, luminance, MAX_SLOTS, nearestSlot, type CoasterSettings, type TextSettings } from './settings';
 
 /** Colored regions grow by this much before overlaps are resolved, so shapes that touch only at a corner merge cleanly. */
@@ -50,6 +55,27 @@ export interface BuildResult {
   warnings: string[];
   payload: string;
   qr: { version: number; modules: number; moduleSize: number; errorCorrection: ErrorCorrection } | null;
+}
+
+/** Gap between the artwork and where the edge starts to curve. */
+const EDGE_CLEARANCE = 0.05;
+
+/**
+ * The base-colored part of the top layer. Its outside follows the coaster edge, rounding included, and
+ * the artwork sits in holes through it; base-colored islands inside the artwork are plain extrusions.
+ */
+function baseTopMesh(shape: Shape, levels: { z: number; ring: Point[] }[]): Mesh {
+  const polygons = polygonsWithHoles(shape);
+  const outer = polygons.reduce((a, b) => (area(polygon(b.outer)) > area(polygon(a.outer)) ? b : a));
+  const islands = intersect(shape, fill(outer.holes));
+  const rim = loft(levels, outer.holes);
+  if (!islands.length) return rim;
+  const inner = extrude(islands, levels[0].z, levels[levels.length - 1].z);
+  const offsetBy = rim.positions.length / 3;
+  return {
+    positions: [...rim.positions, ...inner.positions],
+    triangles: [...rim.triangles, ...inner.triangles.map((i) => i + offsetBy)],
+  };
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Number.isFinite(v) ? v : lo));
@@ -86,7 +112,14 @@ export function buildCoaster(input: CoasterSettings, assets: BuildAssets): Build
   const baseSlot = slot(input.baseSlot);
   const half = size / 2 - margin;
 
-  const footprint = round ? circle(0, 0, size / 2) : rect(0, 0, size, size);
+  const edge = clamp(input.edge, 0, Math.min((2 * thickness) / 3, size / 4));
+  // Artwork stays this far in from the edge so none of it lands on the rounded part.
+  const artInset = edge + EDGE_CLEARANCE;
+  const cornerRadius =
+    !round && input.cornerRadius > 0 ? clamp(Math.max(input.cornerRadius, artInset), artInset, size / 2 - 1) : 0;
+  const outline: Outline = { shape: input.shape, size, cornerRadius };
+  const footprint = polygon(outlineRing(outline, 0));
+  const artArea = polygon(outlineRing(outline, artInset));
   const painted: Painted[] = [];
 
   // Text first, because the code takes whatever room is left.
@@ -120,6 +153,7 @@ export function buildCoaster(input: CoasterSettings, assets: BuildAssets): Build
   const layout = fitLayout({
     shape: input.shape,
     half: innerHalf,
+    cornerRadius: Math.max(cornerRadius - margin, 0),
     codeModules,
     blockModules: codeModules + 2 * quietZone,
     top: straightBox(texts.top),
@@ -251,7 +285,7 @@ export function buildCoaster(input: CoasterSettings, assets: BuildAssets): Build
   let covered: Shape = [];
   for (let i = painted.length - 1; i >= 0; i--) {
     const grown = offset(painted[i].shape, WELD);
-    const visible = intersect(difference(grown, covered), footprint);
+    const visible = intersect(difference(grown, covered), artArea);
     covered = union([covered, grown]);
     if (painted[i].slot === baseSlot || !visible.length) continue;
     bySlot.set(painted[i].slot, [...(bySlot.get(painted[i].slot) ?? []), visible]);
@@ -267,10 +301,15 @@ export function buildCoaster(input: CoasterSettings, assets: BuildAssets): Build
   regions.sort((a, b) => a.slot - b.slot);
 
   const floor = thickness - inlayDepth;
-  const parts: CoasterPart[] = [{ name: 'Base', slot: baseSlot, mesh: extrude(footprint, 0, floor) }];
+  const profile = edgeProfile(thickness, edge);
+  const edgeLevels = (z0: number, z1: number) =>
+    profileBetween(profile, z0, z1).map((l) => ({ z: l.z, ring: outlineRing(outline, l.inset) }));
+  const parts: CoasterPart[] = [{ name: 'Base', slot: baseSlot, mesh: loft(edgeLevels(0, floor), []) }];
   for (const r of regions) {
     if (!r.shape.length) continue;
-    parts.push({ name: `Top, filament ${r.slot + 1}`, slot: r.slot, mesh: extrude(r.shape, floor, thickness) });
+    const mesh =
+      r.slot === baseSlot ? baseTopMesh(r.shape, edgeLevels(floor, thickness)) : extrude(r.shape, floor, thickness);
+    parts.push({ name: `Top, filament ${r.slot + 1}`, slot: r.slot, mesh });
   }
 
   return { parts, regions, size, thickness, footprint, baseSlot, warnings, payload, qr: qrInfo };

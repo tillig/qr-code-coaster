@@ -27,4 +27,21 @@
       <span class="hint">Blank space between the edge and the design.</span>
     </label>
   </div>
+  <div class="row">
+    <label>
+      Edge rounding (mm)
+      <input type="number" min="0" max="1.5" step="0.1" bind:value={settings.edge} />
+      <span class="hint">
+        Rounds the top edge. The bottom edge gets a 45° bevel half as wide, which prints without supports. 0 leaves both
+        sharp.
+      </span>
+    </label>
+    {#if settings.shape === 'square'}
+      <label>
+        Corner radius (mm)
+        <input type="number" min="0" max="40" step="1" bind:value={settings.cornerRadius} />
+        <span class="hint">0 for sharp corners.</span>
+      </label>
+    {/if}
+  </div>
 </Panel>

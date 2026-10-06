@@ -48,6 +48,10 @@ export interface CoasterSettings {
   inlayDepth: number;
   /** Clear space between the coaster edge and the artwork. */
   margin: number;
+  /** Radius of the rounded top edge; the bottom gets a 45° bevel half this size. 0 leaves both sharp. */
+  edge: number;
+  /** Corner radius of a square coaster; 0 for sharp corners. */
+  cornerRadius: number;
   /** Printer nozzle diameter, used to check which details are too fine to print. */
   nozzle: number;
   /** Filament colors as #rrggbb, one per slot. */
@@ -79,6 +83,8 @@ export function defaultSettings(): CoasterSettings {
     thickness: 2.5,
     inlayDepth: 0.6,
     margin: 4,
+    edge: 0.8,
+    cornerRadius: 6,
     nozzle: 0.4,
     slots: ['#ffffff', '#000000'],
     baseSlot: 0,

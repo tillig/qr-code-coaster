@@ -11,7 +11,7 @@ The app is a static page with no server-side code, analytics, cookies, or saved 
 ## Making a coaster
 
 1. Choose what the code holds: a link, text, email, phone call, SMS, WhatsApp message, Wi-Fi login, contact card, or calendar event.
-2. Pick a round or square coaster and set its size and thickness.
+2. Pick a round or square coaster and set its size, thickness, and how rounded its edges and corners are.
 3. Choose up to four filament colors, then assign each part of the design to one of them.
 4. Style the pattern and the corner squares, and optionally add a built-in icon or your own SVG logo, plus text above or below the code.
 5. Drag the 3D preview to inspect it, then download the `.3mf`.

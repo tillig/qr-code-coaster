@@ -3,7 +3,7 @@ import { CURVE_TOLERANCE, polygon, type Point, type Shape } from './shape';
 /** Corner radii in the order top-left, top-right, bottom-right, bottom-left. */
 export type CornerRadii = [number, number, number, number];
 
-function arcSteps(radius: number, sweep: number): number {
+export function arcSteps(radius: number, sweep: number): number {
   if (radius <= CURVE_TOLERANCE) return 1;
   const maxStep = 2 * Math.acos(1 - CURVE_TOLERANCE / radius);
   return Math.max(2, Math.ceil(Math.abs(sweep) / maxStep));
