@@ -154,7 +154,10 @@
   <p>
     Nothing you enter is uploaded, stored, or tracked. The page has no server-side code, and the browser blocks it from
     contacting any other site.
-    <a href="https://github.com/tillig/qr-code-coaster">Source code</a>
+  </p>
+  <p>
+    Made by <a href="https://www.paraesthesia.com">Travis Illig</a>.
+    <a href="https://github.com/tillig/qr-code-coaster">Source code on GitHub</a>.
   </p>
 </footer>
 
