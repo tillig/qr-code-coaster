@@ -24,7 +24,15 @@ import { finderShapes, moduleShapes, type Grid } from '../qr/styles';
 import { layoutArc, layoutLine } from '../text/text';
 import { fitLayout, TEXT_GAP, type Rect, type TextBox } from './layout';
 import { edgeProfile, outlineRing, profileBetween, type Outline } from './outline';
-import { lineWidth, luminance, MAX_SLOTS, nearestSlot, type CoasterSettings, type TextSettings } from './settings';
+import {
+  lineWidth,
+  luminance,
+  MAX_SLOTS,
+  maxEdge,
+  nearestSlot,
+  type CoasterSettings,
+  type TextSettings,
+} from './settings';
 
 /** Colored regions grow by this much before overlaps are resolved, so shapes that touch only at a corner merge cleanly. */
 const WELD = 0.005;
@@ -112,7 +120,7 @@ export function buildCoaster(input: CoasterSettings, assets: BuildAssets): Build
   const baseSlot = slot(input.baseSlot);
   const half = size / 2 - margin;
 
-  const edge = clamp(input.edge, 0, Math.min((2 * thickness) / 3, size / 4));
+  const edge = clamp(input.edge, 0, maxEdge(thickness, size));
   // Artwork stays this far in from the edge so none of it lands on the rounded part.
   const artInset = edge + EDGE_CLEARANCE;
   const cornerRadius =

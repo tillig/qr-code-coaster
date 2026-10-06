@@ -11,6 +11,13 @@ export const NOZZLES = [0.2, 0.4, 0.6, 0.8];
 /** Width of one extruded line; slicers default to slightly wider than the nozzle. */
 export const lineWidth = (nozzle: number) => nozzle + 0.02;
 
+/**
+ * Largest edge rounding a coaster can take, to the nearest 0.1 mm below. The top rounding and the bottom bevel
+ * (half as tall) must fit within the thickness with a straight section left between them.
+ */
+export const maxEdge = (thickness: number, size: number) =>
+  Math.max(0, Math.floor(Math.min((2 * thickness) / 3, size / 4) * 10) / 10);
+
 export type Alignment = 'left' | 'center' | 'right';
 
 export interface TextSettings {

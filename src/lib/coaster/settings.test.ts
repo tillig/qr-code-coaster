@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defaultSettings, nearestSlot, removeSlot } from './settings';
+import { defaultSettings, maxEdge, nearestSlot, removeSlot } from './settings';
 
 describe('removeSlot', () => {
   it('moves users of the removed slot to the base and shifts later slots down', () => {
@@ -27,5 +27,13 @@ describe('nearestSlot', () => {
   it('picks the closest filament color', () => {
     expect(nearestSlot('#f01010', ['#ffffff', '#000000', '#ff0000'])).toBe(2);
     expect(nearestSlot('#222222', ['#ffffff', '#000000', '#ff0000'])).toBe(1);
+  });
+});
+
+describe('maxEdge', () => {
+  it('leaves room for the top rounding and the bottom bevel within the thickness', () => {
+    expect(maxEdge(2.5, 100)).toBe(1.6);
+    expect(maxEdge(6, 100)).toBe(4);
+    expect(maxEdge(6, 10)).toBe(2.5);
   });
 });
